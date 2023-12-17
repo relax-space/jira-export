@@ -1,5 +1,5 @@
 """
-计算任务的平均创建时间和解决时间，以便评估任务处理效率
+一周内，团队每个人每天处理的事务功的工时
 """
 
 import matplotlib.pyplot as plt
@@ -21,27 +21,20 @@ def print_one(pic, folder, filename, font):
     df = pd.read_csv(filepath)
     if df.empty:
         return
-    # 设置中文字体为"Microsoft YaHei"
     plt.rcParams["font.family"] = font
-    # plt.rcParams['font.sans-serif'] = ['SimHei']
-
-    # 假设df是包含任务创建时间和解决时间的数据框
-    # 将时间字段转换为日期时间类型
+    # Convert 创建时间 to datetime type
     df["创建时间"] = pd.to_datetime(df["创建时间"])
-    df["解决时间"] = pd.to_datetime(df["解决时间"])
 
-    # 计算任务处理时间
-    df["处理时间"] = (df["解决时间"] - df["创建时间"]).dt.days
+    # Group by 创建时间 and 工作日志创建者, and calculate the sum of 花费时间 for each day and creator
+    daily_time_spent_by_creator = (
+        df.groupby([df["创建时间"].dt.date, "工作日志创建者"])["花费时间"].sum().unstack()
+    )
 
-    # 创建图表
-    fig, ax = plt.subplots()
-    ax.hist(df["处理时间"], bins=20, edgecolor="black")
-
-    # 设置图表标题和标签
-    ax.set_title("任务处理时间分布")
-    ax.set_xlabel("处理时间（天）")
-    ax.set_ylabel("任务数量")
-
+    # Plotting the data
+    daily_time_spent_by_creator.plot(kind="bar", stacked=True, figsize=(12, 8))
+    plt.title("Time Spent Each Day by Work Log Creator")
+    plt.xlabel("Date")
+    plt.ylabel("Total Time Spent")
     # 显示图表
     pic_name = filename.replace(".csv", ".png")
     plt.savefig(os_path.join(pic, pic_name))
@@ -64,7 +57,7 @@ def loop_all():
             print_one(pic, folder, i, font)
         except Exception as e:
             pass
-            # print(i)
+            print(i, e)
             # print(format_exc())
     pass
 
