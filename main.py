@@ -7,17 +7,6 @@ from copy import deepcopy
 
 import pytz
 
-server = "https://reddate123.atlassian.net"
-options = {
-    "verify": False,
-    "headers": {
-        "Content-Type": "application/json;charset=UTF-8",
-        "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-        "host": "reddate123.atlassian.net",
-        "Cookie": "",
-    },
-}
-
 
 def to_hour(second) -> float:
     if not isinstance(second, (int, float)):
@@ -26,20 +15,39 @@ def to_hour(second) -> float:
     return h
 
 
-# 创建Jira实例
-jira = JIRA(
-    server=server,
-    options=options,
-)
+def start(server, cookie, project_key, folder_name):
+    host = server.replace("https://", "")
+    options = {
+        "verify": False,
+        "headers": {
+            "Content-Type": "application/json;charset=UTF-8",
+            "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+            "host": host,
+            "Cookie": cookie,
+        },
+    }
 
-# Get all projects
-projects = jira.projects()
+    # 创建Jira实例
+    jira = JIRA(
+        server=server,
+        options=options,
+    )
 
-for i, project in enumerate(projects):
-    print(f"{i} {project.key}   {project.name}")
+    # Get all projects
+    projects = jira.projects()
 
-projects = [i for i in projects if i.key == "TEST2"]
-pass
+    for i, project in enumerate(projects):
+        print(f"{i} {project.key}   {project.name}")
+
+    if project_key:
+        projects = [i for i in projects if i.key == project_key]
+    pass
+
+    with ThreadPoolExecutor() as executor:
+        for project in projects:
+            executor.submit(download, project, jira, folder_name)
+
+    print("All issues downloaded successfully!")
 
 
 def remove_blank(raw, blank_mark, replace_value):
@@ -48,15 +56,15 @@ def remove_blank(raw, blank_mark, replace_value):
     return raw
 
 
-def download(project):
+def download(project, jira, folder_name):
     try:
-        download_issues(project)
+        download_issues(project, jira, folder_name)
     except Exception as e:
         print(format_exc())
 
 
 # Download issues for each project
-def download_issues(project):
+def download_issues(project, jira, folder_name):
     issues = jira.search_issues(f"project={project.key}", maxResults=1000)
     if issues.total > 1000:
         for start in range(1000, issues.total, 1000):
@@ -64,7 +72,7 @@ def download_issues(project):
                 f"project={project.key}", startAt=start, maxResults=1000
             )
     with open(
-        f"new/{project.key}.csv", "w", newline="", encoding="utf-8-sig"
+        f"{folder_name}/{project.key}.csv", "w", newline="", encoding="utf-8-sig"
     ) as csvfile:
         writer = csv.writer(csvfile)
         headers = [
@@ -242,8 +250,8 @@ def merge_list(list1, list2):
     return rows
 
 
-with ThreadPoolExecutor() as executor:
-    for project in projects:
-        executor.submit(download, project)
-
-print("All issues downloaded successfully!")
+if __name__ == "__main__":
+    server = "https://reddate123.atlassian.net"
+    cookie = ""
+    start(server, cookie, "TEST2", "new1")
+    pass
