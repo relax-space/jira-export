@@ -251,7 +251,11 @@ def merge_list(list1, list2):
 
 
 if __name__ == "__main__":
-    server = "https://reddate123.atlassian.net"
+    # server = "https://reddate123.atlassian.net"
+    # cookie = ""
+    # start(server, cookie, "TEST2", "new1")
+
+    server = "https://udpn.atlassian.net"
     cookie = ""
-    start(server, cookie, "TEST2", "new1")
+    start(server, cookie, "UDPN", "new2")
     pass
