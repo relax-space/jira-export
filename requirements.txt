@@ -1,1 +1,4 @@
 jira
+matplotlib
+pytz
+pandas
