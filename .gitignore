@@ -162,6 +162,8 @@ new1/*
 !new1/init
 new2/*
 !new2/init
+task/*
+!task/init
 
 pic1
 pic2
