@@ -1,18 +1,10 @@
-import csv
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
 from jira import JIRA
 from traceback import format_exc
-from copy import deepcopy
 from pandas import ExcelWriter, DataFrame
-import pytz
 
-
-def to_hour(second) -> float:
-    if not isinstance(second, (int, float)):
-        return 0
-    h = round(second / 3600, 1)
-    return h
+from relax.util import f_date, gen_dir, to_hour
+from os import path as os_path
 
 
 def start(server, cookie, project_key, folder_name):
@@ -91,8 +83,15 @@ def download_issues(project, jira, folder_name):
         "经办人",  # assignee_displayName
         "是否在职",  # assignee_active
         "项目名称",
+        "项目秘钥",
         "解决时间",  # resolutiondate
         "创建时间",  # created
+        "迭代编号",  # customfield_10020_id
+        "迭代名称",  # customfield_10020_name
+        "迭代状态",  # customfield_10020_state
+        "迭代目标",  # customfield_10020_goal
+        "迭代开始时间",  # customfield_10020_startDate
+        "迭代结束时间",  # customfield_10020_endDate
     ]
     headers2 = [
         "编号",  # customfield_10020_id
@@ -159,43 +158,73 @@ def download_issues(project, jira, folder_name):
         worklog_top = remove_blank(worklog_top, "{}", {})
         worklogs = worklog_top.get("worklogs", [])
         worklogs = remove_blank(worklogs, "[]", [])
-        data1.append(
-            [
-                f_date(issue_fields.get("statuscategorychangedate", "")),
-                parent.get("id", ""),
-                parent.get("key", ""),
-                parent_fields.get("summary", ""),
-                parent_fields_status.get("name", ""),
-                parent_fields_priority.get("name", ""),
-                id,
-                key,
-                issue_fields.get("summary", ""),
-                issuetype.get("name", ""),
-                status.get("name", ""),
-                resolution.get("name", ""),
-                customfield_10102,
-                aggregatetimeoriginalestimate,
-                aggregatetimespent,
-                assignee.get("displayName", ""),
-                assignee.get("active", ""),
-                project.get("name"),
-                f_date(issue_fields.get("resolutiondate", "")),
-                f_date(issue_fields.get("created", "")),
-            ]
-        )
-        if customfield_10020s and len(customfield_10020s) > 2:
+        row1 = [
+            f_date(issue_fields.get("statuscategorychangedate", "")),
+            parent.get("id", ""),
+            parent.get("key", ""),
+            parent_fields.get("summary", ""),
+            parent_fields_status.get("name", ""),
+            parent_fields_priority.get("name", ""),
+            id,
+            key,
+            issue_fields.get("summary", ""),
+            issuetype.get("name", ""),
+            status.get("name", ""),
+            resolution.get("name", ""),
+            customfield_10102,
+            aggregatetimeoriginalestimate,
+            aggregatetimespent,
+            assignee.get("displayName", ""),
+            assignee.get("active", ""),
+            project.get("name"),
+            project.get("key"),
+            f_date(issue_fields.get("resolutiondate", "")),
+            f_date(issue_fields.get("created", "")),
+        ]
+
+        idxmax = 0
+        if customfield_10020s:
             for i in customfield_10020s:
+                cid = i.get("id", 0)
+                if cid > idxmax:
+                    idxmax = cid
                 data2.append(
                     [
-                        i.get("id", 0),
+                        cid,
                         id,
                         i.get("name", ""),
                         i.get("state", ""),
                         i.get("goal", ""),
-                        i.get("startDate", ""),
-                        i.get("endDate", ""),
+                        f_date(i.get("startDate", "")),
+                        f_date(i.get("endDate", "")),
                     ]
                 )
+        if customfield_10020s:
+            for i in customfield_10020s:
+                cid = i.get("id", 0)
+                if idxmax == cid:
+                    row1.extend(
+                        [
+                            cid,
+                            i.get("name", ""),
+                            i.get("state", ""),
+                            i.get("goal", ""),
+                            f_date(i.get("startDate", "")),
+                            f_date(i.get("endDate", "")),
+                        ]
+                    )
+        else:
+            row1.extend(
+                [
+                    0,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                ]
+            )
+        data1.append(row1)
         if worklogs:
             for i in worklogs:
                 data3.append(
@@ -221,26 +250,14 @@ def download_issues(project, jira, folder_name):
         pass
 
 
-def f_date(original_time: str) -> str:
-    # original_time = "2023-12-13T17:33:46.976+0800"
-    try:
-        if not original_time:
-            return ""
-        parsed_time = datetime.strptime(original_time, "%Y-%m-%dT%H:%M:%S.%f%z")
-        china_tz = pytz.timezone("Asia/Shanghai")
-        china_time = parsed_time.astimezone(china_tz)
-        return china_time.strftime("%Y-%m-%d %H:%M:%S")
-    except Exception as e:
-        print(4, e)
-        return ""
-
-
 if __name__ == "__main__":
     server = "https://reddate123.atlassian.net"
     cookie = ""
-    start(server, cookie, "NYL", "new1")
+    raw_folder = os_path.join("data1", "raw")
+    gen_dir(raw_folder)
+    start(server, cookie, "", raw_folder)
 
     # server = "https://udpn.atlassian.net"
     # cookie = ""
-    # start(server, cookie, "UDPN", "new2")
+    # start(server, cookie, "UDPN", "data2")
     pass
