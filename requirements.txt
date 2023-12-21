@@ -2,3 +2,4 @@ jira
 matplotlib
 pytz
 pandas
+chinesecalendar

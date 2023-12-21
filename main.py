@@ -103,14 +103,14 @@ def download_issues(project, jira, folder_name):
         "结束时间",  # customfield_10020_endDate
     ]
     headers3 = [
-        "编号",
+        "日志编号",
         "任务编号",
-        "创建人",
-        "更新人",
-        "记录工时",
-        "内容",
-        "创建时间",
-        "更新时间",
+        "日志创建人",
+        "日志更新人",
+        "日志记录工时",
+        "日志内容",
+        "日志创建时间",
+        "日志更新时间",
     ]
     data1 = []
     data2 = []
@@ -251,13 +251,15 @@ def download_issues(project, jira, folder_name):
 
 
 if __name__ == "__main__":
-    server = "https://reddate123.atlassian.net"
-    cookie = ""
-    raw_folder = os_path.join("data1", "raw")
-    gen_dir(raw_folder)
-    start(server, cookie, "", raw_folder)
-
-    # server = "https://udpn.atlassian.net"
+    # server = "https://reddate123.atlassian.net"
     # cookie = ""
-    # start(server, cookie, "UDPN", "data2")
+    # raw_folder = os_path.join("data1", "raw")
+    # gen_dir(raw_folder)
+    # start(server, cookie, "", raw_folder)
+
+    server = "https://udpn.atlassian.net"
+    cookie = ""
+    raw_folder = os_path.join("data2", "raw")
+    gen_dir(raw_folder)
+    start(server, cookie, "UDPN", raw_folder)
     pass

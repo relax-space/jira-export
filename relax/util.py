@@ -1,8 +1,9 @@
 import pytz
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from os import path as os_path, makedirs
-from traceback import format_exc
 import platform
+from chinese_calendar import is_workday, is_holiday
+
 
 def to_hour(second) -> float:
     if not isinstance(second, (int, float)):
@@ -29,8 +30,19 @@ def gen_dir(folder):
     if not os_path.isdir(folder):
         makedirs(folder)
 
+
 def getFont():
     if platform.system().lower() == "windows":
         return "Microsoft YaHei"
     elif platform.system().lower() == "darwin":
         return "Arial Unicode MS"
+
+
+def get_workday_count(start: date, end: date) -> int:
+    count = 0
+    while start <= end:
+        start += timedelta(days=1)
+        if is_holiday(start):
+            continue
+        count += 1
+    return count
