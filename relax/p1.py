@@ -22,8 +22,10 @@ def start(out_folder, in_file, filename, project_keys, params: tuple[date, date,
         return
     project_names = []
     unique_project_key = set()
+    cond = ""
     if project_keys:
         df.query("项目秘钥 in @project_keys", inplace=True)
+        cond += f"项目[{','.join(project_keys)}]\n"
         for key in project_keys:
             for i, row in df.iterrows():
                 if key not in unique_project_key:
@@ -33,7 +35,6 @@ def start(out_folder, in_file, filename, project_keys, params: tuple[date, date,
     project_name = "||".join(project_names)
 
     outfile = os_path.join(out_folder, f"{'_'.join(project_keys)}_{filename}")
-    cond = ""
     if sprint_date:
         df.dropna(subset=["迭代开始时间", "迭代结束时间"], inplace=True)
         df.query("@sprint_date >= 迭代开始时间 and @sprint_date <= 迭代结束时间", inplace=True)
