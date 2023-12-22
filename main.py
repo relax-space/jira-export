@@ -1,10 +1,15 @@
 from concurrent.futures import ThreadPoolExecutor
 from jira import JIRA
 from traceback import format_exc
-from pandas import ExcelWriter, DataFrame
+from pandas import ExcelWriter, DataFrame, concat
 
 from relax.util import f_date, gen_dir, to_hour
 from os import path as os_path
+from copy import deepcopy
+from json import dump
+import urllib3
+
+urllib3.disable_warnings()
 
 
 def start(server, cookie, project_key, folder_name):
@@ -26,18 +31,33 @@ def start(server, cookie, project_key, folder_name):
     )
 
     # Get all projects
-    projects = jira.projects()
+    projects_raw = jira.projects()
 
-    for i, project in enumerate(projects):
-        print(f"{i} {project.key}   {project.name}")
+    projects = []
+    project_simples = []
+    for project in projects_raw:
+        if hasattr(project, "archived") and project.archived:
+            continue
+        projects.append(project)
+        project_simples.append({"key": project.key, "name": project.name})
+
+    with open("project.json", mode="w", encoding="utf8") as f:
+        dump(project_simples, f, ensure_ascii=False)
 
     if project_key:
         projects = [i for i in projects if i.key == project_key]
     pass
 
     with ThreadPoolExecutor() as executor:
-        for project in projects:
-            executor.submit(download, project, jira, folder_name)
+        futures = {executor.submit(download, project, jira) for project in projects}
+        df_list = []
+        for f in futures:
+            df = f.result()
+            df_list.append(df)
+        df = concat(df_list)
+        name = f"{folder_name}/raw.xlsx"
+        with ExcelWriter(name) as writer:
+            df.to_excel(writer, sheet_name="sheet1", index=False)
 
     print("All issues downloaded successfully!")
 
@@ -48,15 +68,16 @@ def remove_blank(raw, blank_mark, replace_value):
     return raw
 
 
-def download(project, jira, folder_name):
+def download(project, jira):
     try:
-        download_issues(project, jira, folder_name)
+        return download_issues(project, jira)
     except Exception as e:
-        print(format_exc())
+        print(e)
+        # print(format_exc())
 
 
 # Download issues for each project
-def download_issues(project, jira, folder_name):
+def download_issues(project, jira):
     project_key = project.key
     issues = jira.search_issues(f"project={project_key}", maxResults=1000)
     if issues.total > 1000:
@@ -64,7 +85,7 @@ def download_issues(project, jira, folder_name):
             issues += jira.search_issues(
                 f"project={project_key}", startAt=start, maxResults=1000
             )
-    headers1 = [
+    headers = [
         "状态变更时间",
         "主编号",
         "主秘钥",
@@ -84,6 +105,7 @@ def download_issues(project, jira, folder_name):
         "是否在职",  # assignee_active
         "项目名称",
         "项目秘钥",
+        "项目类别",
         "解决时间",  # resolutiondate
         "创建时间",  # created
         "迭代编号",  # customfield_10020_id
@@ -92,19 +114,7 @@ def download_issues(project, jira, folder_name):
         "迭代目标",  # customfield_10020_goal
         "迭代开始时间",  # customfield_10020_startDate
         "迭代结束时间",  # customfield_10020_endDate
-    ]
-    headers2 = [
-        "编号",  # customfield_10020_id
-        "任务编号",
-        "名称",  # customfield_10020_name
-        "状态",  # customfield_10020_state
-        "目标",  # customfield_10020_goal
-        "开始时间",  # customfield_10020_startDate
-        "结束时间",  # customfield_10020_endDate
-    ]
-    headers3 = [
         "日志编号",
-        "任务编号",
         "日志创建人",
         "日志更新人",
         "日志记录工时",
@@ -112,9 +122,7 @@ def download_issues(project, jira, folder_name):
         "日志创建时间",
         "日志更新时间",
     ]
-    data1 = []
-    data2 = []
-    data3 = []
+    data = []
     for issue in issues:
         id = issue.raw.get("id", "")
         key = issue.raw.get("key", "")
@@ -158,7 +166,7 @@ def download_issues(project, jira, folder_name):
         worklog_top = remove_blank(worklog_top, "{}", {})
         worklogs = worklog_top.get("worklogs", [])
         worklogs = remove_blank(worklogs, "[]", [])
-        row1 = [
+        row = [
             f_date(issue_fields.get("statuscategorychangedate", "")),
             parent.get("id", ""),
             parent.get("key", ""),
@@ -178,32 +186,21 @@ def download_issues(project, jira, folder_name):
             assignee.get("active", ""),
             project.get("name"),
             project.get("key"),
+            project.get("projectCategory", {}).get("name", ""),
             f_date(issue_fields.get("resolutiondate", "")),
             f_date(issue_fields.get("created", "")),
         ]
 
-        idxmax = 0
         if customfield_10020s:
+            idxmax = 0
             for i in customfield_10020s:
                 cid = i.get("id", 0)
                 if cid > idxmax:
                     idxmax = cid
-                data2.append(
-                    [
-                        cid,
-                        id,
-                        i.get("name", ""),
-                        i.get("state", ""),
-                        i.get("goal", ""),
-                        f_date(i.get("startDate", "")),
-                        f_date(i.get("endDate", "")),
-                    ]
-                )
-        if customfield_10020s:
             for i in customfield_10020s:
                 cid = i.get("id", 0)
                 if idxmax == cid:
-                    row1.extend(
+                    row.extend(
                         [
                             cid,
                             i.get("name", ""),
@@ -214,23 +211,22 @@ def download_issues(project, jira, folder_name):
                         ]
                     )
         else:
-            row1.extend(
+            row.extend(
                 [
                     0,
                     "",
                     "",
                     "",
-                    "",
-                    "",
+                    None,
+                    None,
                 ]
             )
-        data1.append(row1)
         if worklogs:
             for i in worklogs:
-                data3.append(
+                row_new = deepcopy(row)
+                row_new.extend(
                     [
                         i.get("id", ""),
-                        i.get("issueId", ""),
                         i.get("author", {}).get("displayName", ""),
                         i.get("updateAuthor", {}).get("displayName", ""),
                         to_hour(i.get("timeSpentSeconds", "")),
@@ -239,27 +235,35 @@ def download_issues(project, jira, folder_name):
                         f_date(i.get("updated", "")),
                     ]
                 )
-    df1 = DataFrame(data1, columns=headers1)
-    df2 = DataFrame(data2, columns=headers2)
-    df3 = DataFrame(data3, columns=headers3)
-    name = f"{folder_name}/{project_key}.xlsx"
-    with ExcelWriter(name) as writer:
-        df1.to_excel(writer, sheet_name="sheet1", index=False)
-        df2.to_excel(writer, sheet_name="sheet2", index=False)
-        df3.to_excel(writer, sheet_name="sheet3", index=False)
-        pass
+                data.append(row_new)
+        else:
+            row.extend(
+                [
+                    0,
+                    "",
+                    "",
+                    0,
+                    "",
+                    None,
+                    None,
+                ]
+            )
+            data.append(row)
+
+    df1 = DataFrame(data, columns=headers)
+    return df1
 
 
 if __name__ == "__main__":
-    # server = "https://reddate123.atlassian.net"
-    # cookie = ""
-    # raw_folder = os_path.join("data1", "raw")
-    # gen_dir(raw_folder)
-    # start(server, cookie, "", raw_folder)
-
-    server = "https://udpn.atlassian.net"
+    server = "https://reddate123.atlassian.net"
     cookie = ""
-    raw_folder = os_path.join("data2", "raw")
+    raw_folder = os_path.join("data1", "raw")
     gen_dir(raw_folder)
-    start(server, cookie, "UDPN", raw_folder)
+    start(server, cookie, "", raw_folder)
+
+    # server = "https://udpn.atlassian.net"
+    # cookie = ""
+    # raw_folder = os_path.join("data2", "raw")
+    # gen_dir(raw_folder)
+    # start(server, cookie, "UDPN", raw_folder)
     pass

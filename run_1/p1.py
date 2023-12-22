@@ -14,16 +14,13 @@ if __name__ == "__main__":
 
     root_folder = "data1"
     pic_folder = "pic"
-    in_file = os_path.join(root_folder, "task", "d1.xlsx")
+    in_file = os_path.join(root_folder, "raw", "raw.xlsx")
     # 根据项目查询
     project_keys = ["POC8"]
 
     out_folder = os_path.join(root_folder, pic_folder)
     gen_dir(out_folder)
-    file_name = f"{'_'.join(project_keys)}_{os_path.basename(__file__)}".replace(
-        ".py", ".png"
-    )
-    out_file = os_path.join(out_folder, file_name)
+    file_name = f"{os_path.basename(__file__)}".replace(".py", "")
     font = getFont()
     plt.rcParams["font.family"] = font
 
@@ -31,14 +28,16 @@ if __name__ == "__main__":
     log_start = date(2023, 12, 1)
     log_end = date.today()
 
-    # 根据迭代期间查询
-    sprint_start = date(2023, 12, 1)
-    sprint_end = date.today()
+    # log_start = None
+    # log_end = date.today()
 
-    params = (log_start, log_end, sprint_start, sprint_end)
+    # 根据迭代期间查询
+    sprint_date = date(2023, 12, 1)
+
+    params = (log_start, log_end, sprint_date)
 
     try:
-        start(in_file, out_file, project_keys, params)
+        start(out_folder,in_file, file_name, project_keys, params)
     except Exception as e:
         pass
         print(e)
