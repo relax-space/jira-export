@@ -1,5 +1,5 @@
 """
-根据日志创建时间，分析每天日志记录工时在不同"日志创建人"下的分布情况
+根据日志创建日期，分析每天日志记录工时在不同"日志创建人"下的分布情况
 """
 
 import matplotlib.pyplot as plt
@@ -25,22 +25,22 @@ def start(in_file, out_file, project_keys):
                         project_names.append(row["项目名称"])
                         unique_project_key.add(key)
     project_name = "||".join(project_names)
-    # Convert 创建时间 to datetime type
-    df["日志创建时间"] = pd.to_datetime(df["日志创建时间"])
+    # Convert 创建日期 to datetime type
+    df["日志创建日期"] = pd.to_datetime(df["日志创建日期"])
     rows = []
     for i, row in df.iterrows():
-        if is_workday(row["日志创建时间"]):
+        if is_workday(row["日志创建日期"]):
             rows.append(row)
     df = DataFrame(rows)
 
-    # df.query("日志创建时间 >= @date1 and 日志创建时间 <= @date2", inplace=True)
-    # Group by 创建时间 and 工作日志创建者, and calculate the sum of 日志记录工时 for each day and creator
+    # df.query("日志创建日期 >= @date1 and 日志创建日期 <= @date2", inplace=True)
+    # Group by 创建日期 and 工作日志创建者, and calculate the sum of 日志记录工时 for each day and creator
     # hour_number = get_workday_count(date1, date2)
     hour_number = df.groupby(["日志创建人"]).ngroups
     print(hour_number)
     work_hour = round(hour_number * 8 * 0.8, 1)
     daily_time_spent_by_creator = (
-        df.groupby([df["日志创建时间"].dt.date, "日志创建人"])["日志记录工时"].sum().unstack()
+        df.groupby([df["日志创建日期"].dt.date, "日志创建人"])["日志记录工时"].sum().unstack()
     )
 
     # Plotting the data

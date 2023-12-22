@@ -13,9 +13,9 @@ def start(out_folder, in_file, filename, project_keys, params: tuple[date, date,
     df = read_excel(
         in_file,
         converters={
-            "迭代开始时间": to_datetime,
-            "迭代结束时间": to_datetime,
-            "日志创建时间": to_datetime,
+            "迭代开始日期": to_datetime,
+            "迭代结束日期": to_datetime,
+            "日志创建日期": to_datetime,
         },
     )
     if df.empty:
@@ -36,13 +36,13 @@ def start(out_folder, in_file, filename, project_keys, params: tuple[date, date,
 
     outfile = os_path.join(out_folder, f"{'_'.join(project_keys)}_{filename}")
     if sprint_date:
-        df.dropna(subset=["迭代开始时间", "迭代结束时间"], inplace=True)
-        df.query("@sprint_date >= 迭代开始时间 and @sprint_date <= 迭代结束时间", inplace=True)
+        df.dropna(subset=["迭代开始日期", "迭代结束日期"], inplace=True)
+        df.query("@sprint_date >= 迭代开始日期 and @sprint_date <= 迭代结束日期", inplace=True)
         cond += f"迭代{sprint_date}\n"
         outfile += f'_sprint{sprint_date.strftime("%Y%m%d")}'
 
     if log_start:
-        df.query("日志创建时间 >= @log_start and 日志创建时间 <= @log_end", inplace=True)
+        df.query("日志创建日期 >= @log_start and 日志创建日期 <= @log_end", inplace=True)
         cond += f"日志期间[{log_start}~{log_end}]"
         outfile += (
             f'_worklog{log_start.strftime("%Y%m%d")}_{log_end.strftime("%Y%m%d")}'

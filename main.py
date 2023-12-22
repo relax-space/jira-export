@@ -107,20 +107,26 @@ def download_issues(project, jira):
         "项目秘钥",
         "项目类别",
         "解决时间",  # resolutiondate
+        "解决日期",
         "创建时间",  # created
+        "创建日期",
         "迭代编号",  # customfield_10020_id
         "迭代名称",  # customfield_10020_name
         "迭代状态",  # customfield_10020_state
         "迭代目标",  # customfield_10020_goal
         "迭代开始时间",  # customfield_10020_startDate
+        "迭代开始日期",
         "迭代结束时间",  # customfield_10020_endDate
+        "迭代结束日期",
         "日志编号",
         "日志创建人",
         "日志更新人",
         "日志记录工时",
         "日志内容",
         "日志创建时间",
+        "日志创建日期",
         "日志更新时间",
+        "日志更新日期",
     ]
     data = []
     for issue in issues:
@@ -188,7 +194,9 @@ def download_issues(project, jira):
             project.get("key"),
             project.get("projectCategory", {}).get("name", ""),
             f_date(issue_fields.get("resolutiondate", "")),
+            f_date(issue_fields.get("resolutiondate", ""), "%Y-%m-%d"),
             f_date(issue_fields.get("created", "")),
+            f_date(issue_fields.get("created", ""), "%Y-%m-%d"),
         ]
 
         if customfield_10020s:
@@ -207,7 +215,9 @@ def download_issues(project, jira):
                             i.get("state", ""),
                             i.get("goal", ""),
                             f_date(i.get("startDate", "")),
+                            f_date(i.get("startDate", ""), "%Y-%m-%d"),
                             f_date(i.get("endDate", "")),
+                            f_date(i.get("endDate", ""), "%Y-%m-%d"),
                         ]
                     )
         else:
@@ -217,6 +227,8 @@ def download_issues(project, jira):
                     "",
                     "",
                     "",
+                    None,
+                    None,
                     None,
                     None,
                 ]
@@ -232,7 +244,9 @@ def download_issues(project, jira):
                         to_hour(i.get("timeSpentSeconds", "")),
                         i.get("comment", ""),
                         f_date(i.get("created", "")),
+                        f_date(i.get("created", ""), "%Y-%m-%d"),
                         f_date(i.get("updated", "")),
+                        f_date(i.get("updated", ""), "%Y-%m-%d"),
                     ]
                 )
                 data.append(row_new)
@@ -244,6 +258,8 @@ def download_issues(project, jira):
                     "",
                     0,
                     "",
+                    None,
+                    None,
                     None,
                     None,
                 ]

@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     root_folder = "data1"
     pic_folder = "pic"
-    in_file = os_path.join(root_folder, "task", "d2.xlsx")
+    in_file = os_path.join(root_folder, "raw", "raw.xlsx")
     project_keys = ["POC8"]
 
     out_folder = os_path.join(root_folder, pic_folder)

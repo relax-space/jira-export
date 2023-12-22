@@ -15,7 +15,7 @@ if __name__ == "__main__":
     pic_folder = "pic"
     in_file = os_path.join(root_folder, "raw", "raw.xlsx")
     # 根据项目查询
-    project_keys = ["POC8"]
+    project_keys = ["POC8","POC11"]
     exclude_project_keys = ["TEST", "TEST2"]
 
     out_folder = os_path.join(root_folder, pic_folder)

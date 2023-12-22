@@ -24,10 +24,10 @@ def start(
     df = read_excel(
         in_file,
         converters={
-            "迭代开始时间": to_datetime,
-            "迭代结束时间": to_datetime,
-            "创建时间": to_datetime,
-            "解决时间": to_datetime,
+            "迭代开始日期": to_datetime,
+            "迭代结束日期": to_datetime,
+            "创建日期": to_datetime,
+            "解决日期": to_datetime,
         },
     )
     if df.empty:
@@ -51,13 +51,13 @@ def start(
     df.query("类型 in @status", inplace=True)
 
     outfile = os_path.join(out_folder, f"{'_'.join(project_keys)}_{filename}")
-    df.query("创建时间 >= @create_start and 创建时间 <= @create_end", inplace=True)
+    df.query("创建日期 >= @create_start and 创建日期 <= @create_end", inplace=True)
     cond += f"创建期间[{create_start}~{create_end}]\n"
-    outfile += f'_创建时间{create_start.strftime("%Y%m%d")}_{create_end.strftime("%Y%m%d")}'
+    outfile += f'_创建日期{create_start.strftime("%Y%m%d")}_{create_end.strftime("%Y%m%d")}'
 
     if sprint_date:
-        df.dropna(subset=["迭代开始时间", "迭代结束时间"], inplace=True)
-        df.query("@sprint_date >= 迭代开始时间 and @sprint_date <= 迭代结束时间", inplace=True)
+        df.dropna(subset=["迭代开始日期", "迭代结束日期"], inplace=True)
+        df.query("@sprint_date >= 迭代开始日期 and @sprint_date <= 迭代结束日期", inplace=True)
         cond += f"迭代{sprint_date}\n"
         outfile += f'_sprint{sprint_date.strftime("%Y%m%d")}'
     if catelogs:
@@ -66,8 +66,8 @@ def start(
         outfile += f"_项目类别{'_'.join(catelogs)}"
 
     # 计算每天的BUG创建数量和关闭数量
-    daily_bug_created = df["创建时间"].dt.date.value_counts().sort_index()
-    daily_bug_closed = df["解决时间"].dt.date.value_counts().sort_index()
+    daily_bug_created = df["创建日期"].dt.date.value_counts().sort_index()
+    daily_bug_closed = df["解决日期"].dt.date.value_counts().sort_index()
     # 创建折线图
     plt.figure(figsize=(10, 6))
     plt.plot(

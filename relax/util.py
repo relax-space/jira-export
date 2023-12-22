@@ -12,7 +12,7 @@ def to_hour(second) -> float:
     return h
 
 
-def f_date(original_time: str) -> str:
+def f_date(original_time: str, format: str = "%Y-%m-%d %H:%M:%S") -> str:
     # original_time = "2023-12-13T17:33:46.976+0800"
     try:
         if not original_time:
@@ -20,7 +20,7 @@ def f_date(original_time: str) -> str:
         parsed_time = datetime.strptime(original_time, "%Y-%m-%dT%H:%M:%S.%f%z")
         china_tz = pytz.timezone("Asia/Shanghai")
         china_time = parsed_time.astimezone(china_tz)
-        return china_time.strftime("%Y-%m-%d %H:%M:%S")
+        return china_time.strftime(format)
     except Exception as e:
         print(4, e)
         return ""
