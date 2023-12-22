@@ -10,7 +10,7 @@ if __name__ == "__main__":
     chdir(p)
     from relax.util import gen_dir
     from relax.util import getFont
-    from relax.p3 import start
+    from relax.p4 import start
 
     root_folder = "data1"
     pic_folder = "pic"
@@ -25,21 +25,21 @@ if __name__ == "__main__":
     font = getFont()
     plt.rcParams["font.family"] = font
 
-    # 根据日志记录工时，提交时间查出
-    # log_start = date(2023, 12, 1)
-    # log_end = date.today()
+    # 根据创建时间
+    create_start = date(2023, 12, 1)
+    create_end = date.today()
 
-    log_start = None
-    log_end = date.today()
+    # create_start = None
+    # create_end = date.today()
 
     # 根据迭代期间查询
     # sprint_date = date(2023, 12, 1)
     sprint_date = None
 
     # 根据项目类别查询
-    catelogs = ["产研项目"]
+    catelogs = []
 
-    params = (log_start, log_end, sprint_date, exclude_project_keys, catelogs)
+    params = (create_start, create_end, sprint_date, exclude_project_keys, catelogs)
 
     try:
         start(out_folder, in_file, file_name, project_keys, params)

@@ -28,8 +28,10 @@ def start(
     if df.empty:
         return
     unique_project_key = set()
+    cond = ""
     if project_keys:
         df.query("项目秘钥 in @project_keys", inplace=True)
+        cond += f"项目[{','.join(project_keys)}]\n"
         for key in project_keys:
             for i, row in df.iterrows():
                 if key not in unique_project_key:
@@ -40,10 +42,9 @@ def start(
         df.query("项目秘钥 not in @exclude_project_keys", inplace=True)
 
     outfile = os_path.join(out_folder, f"{'_'.join(project_keys)}_{filename}")
-    cond = ""
     if log_start:
         df.query("日志创建时间 >= @log_start and 日志创建时间 <= @log_end", inplace=True)
-        cond += f"日志期间[{log_start}~{log_end}]"
+        cond += f"日志期间[{log_start}~{log_end}]\n"
         outfile += (
             f'_worklog{log_start.strftime("%Y%m%d")}_{log_end.strftime("%Y%m%d")}'
         )
