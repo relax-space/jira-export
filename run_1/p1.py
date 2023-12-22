@@ -4,7 +4,7 @@ from sys import path as sys_path
 import matplotlib.pyplot as plt
 
 
-if __name__ == "__main__":
+def main():
     p = os_path.dirname(os_path.dirname(os_path.abspath(__file__)))
     sys_path.insert(0, p)
     chdir(p)
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     pic_folder = "pic"
     in_file = os_path.join(root_folder, "raw", "raw.xlsx")
     # 根据项目查询
-    project_keys = ["POC8"]
+    project_keys = ["POC11"]
 
     out_folder = os_path.join(root_folder, pic_folder)
     gen_dir(out_folder)
@@ -25,19 +25,24 @@ if __name__ == "__main__":
     plt.rcParams["font.family"] = font
 
     # 根据日志记录工时，提交时间查出
-    log_start = date(2023, 12, 1)
+    log_start = date(2023, 12, 18)
     log_end = date.today()
 
     # log_start = None
     # log_end = date.today()
 
     # 根据迭代期间查询
-    sprint_date = date(2023, 12, 1)
+    # sprint_date = date(2023, 12, 1)
+    sprint_date = None
 
     params = (log_start, log_end, sprint_date)
 
     try:
-        start(out_folder,in_file, file_name, project_keys, params)
+        start(out_folder, in_file, file_name, project_keys, params)
     except Exception as e:
         pass
         print(e)
+
+
+if __name__ == "__main__":
+    main()

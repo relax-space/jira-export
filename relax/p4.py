@@ -65,6 +65,10 @@ def start(
         cond += f"项目类别{','.join(catelogs)}\n"
         outfile += f"_项目类别{'_'.join(catelogs)}"
 
+    if df.empty:
+        print(f"{filename} 查询条件没有数据。")
+        return
+
     # 计算每天的BUG创建数量和关闭数量
     daily_bug_created = df["创建日期"].dt.date.value_counts().sort_index()
     daily_bug_closed = df["解决日期"].dt.date.value_counts().sort_index()

@@ -4,7 +4,7 @@ from sys import path as sys_path
 import matplotlib.pyplot as plt
 
 
-if __name__ == "__main__":
+def main():
     p = os_path.dirname(os_path.dirname(os_path.abspath(__file__)))
     sys_path.insert(0, p)
     chdir(p)
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     pic_folder = "pic"
     in_file = os_path.join(root_folder, "raw", "raw.xlsx")
     # 根据项目查询
-    project_keys = ["POC8","POC11"]
+    project_keys = ["POC8", "POC11"]
     exclude_project_keys = ["TEST", "TEST2"]
 
     out_folder = os_path.join(root_folder, pic_folder)
@@ -45,3 +45,7 @@ if __name__ == "__main__":
     except Exception as e:
         pass
         print(e)
+
+
+if __name__ == "__main__":
+    main()

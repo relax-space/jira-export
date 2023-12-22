@@ -62,6 +62,10 @@ def start(
         cond += f"项目类别{','.join(catelogs)}\n"
         outfile += f"_项目类别{'_'.join(catelogs)}"
 
+    if df.empty:
+        print(f"{filename} 查询条件没有数据。")
+        return
+
     # 按 '项目' 分组，并计算预估工时和实际工时的总和
     grouped = df.groupby("日志创建人")[["日志记录工时"]].sum()
 

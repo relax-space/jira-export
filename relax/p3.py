@@ -64,6 +64,10 @@ def start(
     status = "完成"
     df.query("解决方案 == @status", inplace=True)
 
+    if df.empty:
+        print(f"{filename} 查询条件没有数据。")
+        return
+
     # 按 '项目' 分组，并计算预估工时和实际工时的总和
     grouped = df.groupby("项目名称")[["预估工时", "实际工时"]].sum()
 

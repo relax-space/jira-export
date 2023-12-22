@@ -68,7 +68,7 @@ def remove_blank(raw, blank_mark, replace_value):
     return raw
 
 
-def download(project, jira):
+def download(project, jira: JIRA):
     try:
         return download_issues(project, jira)
     except Exception as e:
@@ -77,13 +77,14 @@ def download(project, jira):
 
 
 # Download issues for each project
-def download_issues(project, jira):
+def download_issues(project, jira: JIRA):
+    maxResults = 100
     project_key = project.key
-    issues = jira.search_issues(f"project={project_key}", maxResults=1000)
-    if issues.total > 1000:
-        for start in range(1000, issues.total, 1000):
+    issues = jira.search_issues(f"project={project_key}", maxResults=maxResults)
+    if issues.total > maxResults:
+        for start in range(maxResults, issues.total, maxResults):
             issues += jira.search_issues(
-                f"project={project_key}", startAt=start, maxResults=1000
+                f"project={project_key}", startAt=start, maxResults=maxResults
             )
     headers = [
         "状态变更时间",
@@ -172,6 +173,9 @@ def download_issues(project, jira):
         worklog_top = remove_blank(worklog_top, "{}", {})
         worklogs = worklog_top.get("worklogs", [])
         worklogs = remove_blank(worklogs, "[]", [])
+
+        resolutiondate = issue_fields.get("resolutiondate", "")
+        created = issue_fields.get("created", "")
         row = [
             f_date(issue_fields.get("statuscategorychangedate", "")),
             parent.get("id", ""),
@@ -193,10 +197,10 @@ def download_issues(project, jira):
             project.get("name"),
             project.get("key"),
             project.get("projectCategory", {}).get("name", ""),
-            f_date(issue_fields.get("resolutiondate", "")),
-            f_date(issue_fields.get("resolutiondate", ""), "%Y-%m-%d"),
-            f_date(issue_fields.get("created", "")),
-            f_date(issue_fields.get("created", ""), "%Y-%m-%d"),
+            f_date(resolutiondate),
+            f_date(resolutiondate, "%Y-%m-%d"),
+            f_date(created),
+            f_date(created, "%Y-%m-%d"),
         ]
 
         if customfield_10020s:
@@ -208,16 +212,18 @@ def download_issues(project, jira):
             for i in customfield_10020s:
                 cid = i.get("id", 0)
                 if idxmax == cid:
+                    startDate = i.get("startDate", "")
+                    endDate = i.get("endDate", "")
                     row.extend(
                         [
                             cid,
                             i.get("name", ""),
                             i.get("state", ""),
                             i.get("goal", ""),
-                            f_date(i.get("startDate", "")),
-                            f_date(i.get("startDate", ""), "%Y-%m-%d"),
-                            f_date(i.get("endDate", "")),
-                            f_date(i.get("endDate", ""), "%Y-%m-%d"),
+                            f_date(startDate),
+                            f_date(startDate, "%Y-%m-%d"),
+                            f_date(endDate),
+                            f_date(endDate, "%Y-%m-%d"),
                         ]
                     )
         else:
@@ -236,6 +242,8 @@ def download_issues(project, jira):
         if worklogs:
             for i in worklogs:
                 row_new = deepcopy(row)
+                log_created = i.get("created", "")
+                log_updated = i.get("updated", "")
                 row_new.extend(
                     [
                         i.get("id", ""),
@@ -243,10 +251,10 @@ def download_issues(project, jira):
                         i.get("updateAuthor", {}).get("displayName", ""),
                         to_hour(i.get("timeSpentSeconds", "")),
                         i.get("comment", ""),
-                        f_date(i.get("created", "")),
-                        f_date(i.get("created", ""), "%Y-%m-%d"),
-                        f_date(i.get("updated", "")),
-                        f_date(i.get("updated", ""), "%Y-%m-%d"),
+                        f_date(log_created),
+                        f_date(log_created, "%Y-%m-%d"),
+                        f_date(log_updated),
+                        f_date(log_updated, "%Y-%m-%d"),
                     ]
                 )
                 data.append(row_new)
