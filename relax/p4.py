@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 from pandas import read_excel, to_datetime
 from datetime import date
 from os import path as os_path
-import matplotlib.ticker as mtick
 import matplotlib.dates as mdates
 
 

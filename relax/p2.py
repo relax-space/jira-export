@@ -62,9 +62,6 @@ def start(
         print(f"{filename} 查询条件没有数据。")
         return
 
-    # df.query("日志创建日期 >= @date1 and 日志创建日期 <= @date2", inplace=True)
-    # Group by 创建日期 and 工作日志创建者, and calculate the sum of 日志记录工时 for each day and creator
-    # hour_number = get_workday_count(date1, date2)
     hour_number = df.groupby(["日志创建人"]).ngroups
     work_hour = round(hour_number * 8 * 0.8, 1)
     daily_time_spent_by_creator = (
