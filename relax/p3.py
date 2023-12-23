@@ -49,7 +49,7 @@ def start(
     status = ["缺陷", "缺陷子任务"]
     df.query("类型 in @status", inplace=True)
 
-    outfile = os_path.join(out_folder, f"{'_'.join(project_keys)}_{filename}")
+    outfile = os_path.join(out_folder, f"{filename}_{'_'.join(project_keys)}")
     df.query("创建日期 >= @create_start and 创建日期 <= @create_end", inplace=True)
     cond += f"创建期间[{create_start}~{create_end}]\n"
     outfile += f'_创建日期{create_start.strftime("%Y%m%d")}_{create_end.strftime("%Y%m%d")}'

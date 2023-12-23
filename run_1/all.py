@@ -11,6 +11,7 @@ def main():
         executor.submit(main7)
         executor.submit(main8)
         executor.submit(main9)
+        executor.submit(main10)
 
 
 if __name__ == "__main__":
@@ -28,5 +29,6 @@ if __name__ == "__main__":
     from run_1.p7 import main as main7
     from run_1.p8 import main as main8
     from run_1.p9 import main as main9
+    from run_1.p10 import main as main10
 
     main()

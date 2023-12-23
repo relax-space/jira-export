@@ -34,7 +34,7 @@ def start(out_folder, in_file, filename, project_keys, params: tuple[date, date,
                         unique_project_key.add(key)
     project_name = "||".join(project_names)
 
-    outfile = os_path.join(out_folder, f"{'_'.join(project_keys)}_{filename}")
+    outfile = os_path.join(out_folder, f"{filename}_{'_'.join(project_keys)}")
     if sprint_date:
         df.dropna(subset=["迭代开始日期", "迭代结束日期"], inplace=True)
         df.query("@sprint_date >= 迭代开始日期 and @sprint_date <= 迭代结束日期", inplace=True)

@@ -41,7 +41,7 @@ def start(
     if exclude_project_keys:
         df.query("项目秘钥 not in @exclude_project_keys", inplace=True)
 
-    outfile = os_path.join(out_folder, f"{'_'.join(project_keys)}_{filename}")
+    outfile = os_path.join(out_folder, f"{filename}_{'_'.join(project_keys)}")
     if log_start:
         df.query("日志创建日期 >= @log_start and 日志创建日期 <= @log_end", inplace=True)
         cond += f"日志期间[{log_start}~{log_end}]\n"
@@ -65,21 +65,17 @@ def start(
 
     hour_number = df.groupby(["日志创建人"]).ngroups
     work_hour = round(hour_number * 8 * 0.8, 1)
-    daily_time_spent_by_creator = (
-        df.groupby([df["日志创建日期"], "日志创建人"])["日志记录工时"].sum().unstack()
-    )
+    group = df.groupby([df["日志创建日期"], "日志创建人"])["日志记录工时"].sum().unstack()
 
     # Plotting the data
-    daily_time_spent_by_creator.plot(kind="bar", stacked=True, figsize=(12, 8))
+    group.plot(kind="bar", stacked=True, figsize=(12, 8))
 
     plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=1))
-    plt.gca().set_xticks(range(len(daily_time_spent_by_creator.index)))
-    plt.gca().set_xticklabels(
-        [date.strftime("%Y-%m-%d") for date in daily_time_spent_by_creator.index]
-    )
+    plt.gca().set_xticks(range(len(group.index)))
+    plt.gca().set_xticklabels([date.strftime("%Y-%m-%d") for date in group.index])
 
     x_start = 0.5
-    x_end = len(daily_time_spent_by_creator) - 0.5
+    x_end = len(group) - 0.5
 
     # Add the horizontal line with specified start and end points, color, and linestyle
     plt.axhline(
@@ -87,8 +83,8 @@ def start(
         color="g",
         linestyle="-",
         label="Average Work Hours",
-        xmin=x_start / len(daily_time_spent_by_creator),
-        xmax=x_end / len(daily_time_spent_by_creator),
+        xmin=x_start / len(group),
+        xmax=x_end / len(group),
     )
     plt.text(
         x_end,

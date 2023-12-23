@@ -41,7 +41,7 @@ def start(
     if exclude_project_keys:
         df.query("项目秘钥 not in @exclude_project_keys", inplace=True)
 
-    outfile = os_path.join(out_folder, f"{'_'.join(project_keys)}_{filename}")
+    outfile = os_path.join(out_folder, f"{filename}_{'_'.join(project_keys)}")
     if log_start:
         df.query("日志创建日期 >= @log_start and 日志创建日期 <= @log_end", inplace=True)
         cond += f"日志期间[{log_start}~{log_end}]\n"
