@@ -64,6 +64,6 @@ def start(out_folder, in_file, filename, project_keys, params: tuple[date, date,
 
     plt.xlabel("经办人")
     plt.ylabel("工时(小时)")
-    plt.title(f"{project_name} 经办人预估工时与实际工时对比 \n查询条件：{cond}")
+    plt.title(f"经办人预估工时与实际工时对比 \n查询条件：{cond}")
     # 显示图表
     plt.savefig(f"{outfile}.png")

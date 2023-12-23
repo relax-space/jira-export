@@ -10,7 +10,7 @@ def main():
     chdir(p)
     from relax.util import gen_dir
     from relax.util import getFont
-    from relax.p11 import start
+    from relax.p8 import start
 
     root_folder = "data1"
     pic_folder = "pic"

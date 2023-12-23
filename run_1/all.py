@@ -8,7 +8,8 @@ def main():
         executor.submit(main3)
         executor.submit(main4)
         executor.submit(main6)
-        executor.submit(main11)
+        executor.submit(main7)
+        executor.submit(main8)
 
 
 if __name__ == "__main__":
@@ -23,6 +24,7 @@ if __name__ == "__main__":
     from run_1.p3 import main as main3
     from run_1.p4 import main as main4
     from run_1.p6 import main as main6
-    from run_1.p11 import main as main11
+    from run_1.p7 import main as main7
+    from run_1.p8 import main as main8
 
     main()
