@@ -16,7 +16,7 @@ def main():
     pic_folder = "pic"
     in_file = os_path.join(root_folder, "raw", "raw.xlsx")
     # 根据项目查询
-    project_keys = []
+    project_keys = ["POC8"]
     exclude_project_keys = ["TEST", "TEST2"]
 
     out_folder = os_path.join(root_folder, pic_folder)
@@ -25,12 +25,12 @@ def main():
     font = getFont()
     plt.rcParams["font.family"] = font
 
-    # 根据日志记录工时，提交时间查出
-    log_start = date(2023, 12, 18)
-    log_end = date.today()
+    # 根据创建时间
+    create_start = date(2023, 12, 1)
+    create_end = date.today()
 
-    # log_start = None
-    # log_end = date.today()
+    # create_start = None
+    # create_end = date.today()
 
     # 根据迭代期间查询
     # sprint_date = date(2023, 12, 1)
@@ -39,7 +39,7 @@ def main():
     # 根据项目类别查询
     catelogs = []
 
-    params = (log_start, log_end, sprint_date, exclude_project_keys, catelogs)
+    params = (create_start, create_end, sprint_date, exclude_project_keys, catelogs)
 
     try:
         start(out_folder, in_file, file_name, project_keys, params)

@@ -15,7 +15,7 @@ def main():
     pic_folder = "pic"
     in_file = os_path.join(root_folder, "raw", "raw.xlsx")
     # 根据项目查询
-    project_keys = []
+    project_keys = ["POC11"]
     exclude_project_keys = ["TEST", "TEST2"]
 
     out_folder = os_path.join(root_folder, pic_folder)
@@ -25,7 +25,7 @@ def main():
     plt.rcParams["font.family"] = font
 
     # 根据创建时间
-    log_start = date(2023, 11, 1)
+    log_start = date(2023, 12, 18)
     log_end = date.today()
 
     # log_start = None

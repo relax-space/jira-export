@@ -1,11 +1,13 @@
 """
-根据日志创建日期，分析每天日志记录工时在不同"日志创建人"下的分布情况
+期间内团队成员饱和度 成员期间内登记的工时总和/（8小时*期间天数） 期间天数不含周末及休假 
 """
 
 from matplotlib import pyplot as plt
+from matplotlib.ticker import PercentFormatter
 from pandas import read_excel, to_datetime
 from datetime import date
 from os import path as os_path
+from relax.util import get_workday_count
 
 
 def start(
@@ -48,6 +50,8 @@ def start(
             f'_worklog{log_start.strftime("%Y%m%d")}_{log_end.strftime("%Y%m%d")}'
         )
 
+    df.drop_duplicates(subset=["编号"], keep="first", inplace=True)
+
     if sprint_date:
         df.dropna(subset=["迭代开始日期", "迭代结束日期"], inplace=True)
         df.query("@sprint_date >= 迭代开始日期 and @sprint_date <= 迭代结束日期", inplace=True)
@@ -62,44 +66,32 @@ def start(
         print(f"{filename} 查询条件没有数据。")
         return
 
-    hour_number = df.groupby(["日志创建人"]).ngroups
-    work_hour = round(hour_number * 8 * 0.8, 1)
-    daily_time_spent_by_creator = (
-        df.groupby([df["日志创建日期"], "日志创建人"])["日志记录工时"].sum().unstack()
-    )
+    # 按 '项目' 分组，并计算预估工时和实际工时的总和
+    grouped = df.groupby("日志创建人")[["日志记录工时"]].sum()
 
-    # Plotting the data
-    daily_time_spent_by_creator.plot(kind="bar", stacked=True, figsize=(12, 8))
-    x_start = 0.5
-    x_end = len(daily_time_spent_by_creator) - 0.5
+    standard_hour = get_workday_count(log_start, log_end) * 8
 
-    # Add the horizontal line with specified start and end points, color, and linestyle
-    plt.axhline(
-        y=work_hour,
-        color="g",
-        linestyle="-",
-        label="Average Work Hours",
-        xmin=x_start / len(daily_time_spent_by_creator),
-        xmax=x_end / len(daily_time_spent_by_creator),
-    )
-    plt.text(
-        x_end,
-        work_hour,
-        f"{work_hour}",
-        va="center",
-        ha="right",
-        backgroundcolor="w",
-    )
-    plt.legend()
+    # 计算每个日志创建人的日志记录工时总和除以standard_hour
+    grouped["饱和度"] = grouped["日志记录工时"] / standard_hour
+
+    grouped.drop(columns=["日志记录工时"], inplace=True)
+
+    grouped.plot(kind="bar", figsize=(12, 8))
+    # 将纵坐标格式转换为百分比
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+
     for container in plt.gca().containers:
         plt.bar_label(
             container,
-            label_type="center",
-            labels=[f"{v}" if v != 0 else "" for v in container.datavalues],
+            label_type="edge",
+            labels=[f"{v*100:.2f}%" if v != 0 else "" for v in container.datavalues],
         )
-    # [{date1.strftime('%Y-%m-%d')}~{date2.strftime('%Y-%m-%d')}]
-    plt.title(f"成员工时每日分布 \n查询条件：{cond}")
-    plt.xlabel("日期")
-    plt.ylabel("实际工时(小时)")
-    # 显示图表
+
+    # 设置图表标题和坐标轴标签
+    plt.title(f"期间内团队成员饱和度 \n查询条件：{cond}")
+    plt.xlabel("成员")
+    plt.ylabel("饱和度")
+
+    plt.legend()
+
     plt.savefig(f"{outfile}.png", bbox_inches="tight")

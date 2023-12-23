@@ -1,8 +1,10 @@
 """
-期间内缺陷创建量与解决量趋势
+原始需求：期间内事务类型是“生产问题”创建数量和状态是关闭的数量，用柱状图
+AI对话：根据创建日期，分析每天创建和解决的数量在不同项目中的分布情况
 """
 
 from matplotlib import pyplot as plt
+from matplotlib.ticker import MultipleLocator
 from pandas import read_excel, to_datetime
 from datetime import date
 from os import path as os_path
@@ -16,10 +18,7 @@ def start(
     project_keys,
     params: tuple[date, date, date, list, list],
 ):
-    create_start, create_end, sprint_date, exclude_project_keys, catelogs = params
-    if not create_start:
-        print("必须指定期间，create_start不能为空")
-        return
+    log_start, log_end, sprint_date, exclude_project_keys, catelogs = params
     df = read_excel(
         in_file,
         converters={
@@ -45,14 +44,11 @@ def start(
     if exclude_project_keys:
         df.query("项目秘钥 not in @exclude_project_keys", inplace=True)
 
-    df.drop_duplicates(subset=["编号"], keep="first", inplace=True)
-    status = ["缺陷", "缺陷子任务"]
-    df.query("类型 in @status", inplace=True)
-
     outfile = os_path.join(out_folder, f"{'_'.join(project_keys)}_{filename}")
-    df.query("创建日期 >= @create_start and 创建日期 <= @create_end", inplace=True)
-    cond += f"创建期间[{create_start}~{create_end}]\n"
-    outfile += f'_创建日期{create_start.strftime("%Y%m%d")}_{create_end.strftime("%Y%m%d")}'
+    if log_start:
+        df.query("创建日期 >= @log_start and 创建日期 <= @log_end", inplace=True)
+        cond += f"期间[{log_start}~{log_end}]\n"
+        outfile += f'_创建日期{log_start.strftime("%Y%m%d")}_{log_end.strftime("%Y%m%d")}'
 
     if sprint_date:
         df.dropna(subset=["迭代开始日期", "迭代结束日期"], inplace=True)
@@ -64,43 +60,84 @@ def start(
         cond += f"项目类别{','.join(catelogs)}\n"
         outfile += f"_项目类别{'_'.join(catelogs)}"
 
+    df.drop_duplicates(subset=["编号"], keep="first", inplace=True)
+    value = "生产问题"
+    df.query("类型 == @value", inplace=True)
+
     if df.empty:
         print(f"{filename} 查询条件没有数据。")
         return
 
-    # 计算每天的BUG创建数量和关闭数量
-    daily_bug_created = df["创建日期"].value_counts().sort_index()
-    daily_bug_closed = df["解决日期"].value_counts().sort_index()
-    # 创建折线图
-    plt.figure(figsize=(10, 6))
-    plt.plot(
-        daily_bug_created.index, daily_bug_created.values, label="BUG创建数量", marker="o"
+    # 计算每个项目的创建日期和解决日期数量
+    created = df.groupby(["创建日期", "项目名称"]).size().unstack(fill_value=0)
+    resolved = df.groupby(["解决日期", "项目名称"]).size().unstack(fill_value=0)
+
+    index_all = set(created.index.to_list()).union(set(resolved.index.to_list()))
+    index_all = sorted(index_all)
+    # 使用created的索引，将resolved重新索引，并填充缺失值为0
+    created = created.reindex(index=index_all, fill_value=0)
+    resolved = resolved.reindex(index=index_all, fill_value=0)
+    print(created)
+    print(resolved)
+
+    # 创建堆积柱状图
+    fig, ax1 = plt.subplots(figsize=(12, 12))
+
+    # 绘制主坐标轴的堆积柱状图
+    created.plot(kind="bar", stacked=True, ax=ax1, position=1, width=0.4, label="创建日期")
+    # 绘制次坐标轴的堆积柱状图并使用相同颜色
+    ax2 = ax1.twinx()
+    color_map = {
+        col: container.get_children()[0].get_facecolor()
+        for col, container in zip(created.columns, ax1.containers)
+    }
+    resolved_mapped_colors = resolved.columns.map(
+        lambda x: color_map[x] if x in color_map else "r"
     )
-    plt.plot(daily_bug_closed.index, daily_bug_closed.values, label="关闭数量", marker="x")
+    resolved.plot(
+        kind="bar",
+        stacked=True,
+        ax=ax2,
+        position=0,
+        width=0.4,
+        color=resolved_mapped_colors,
+        label="解决日期",
+    )
 
-    # 设置横坐标文字竖着显示
-    plt.xticks(rotation="vertical")
-    plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=1))
+    # 添加标签
+    ax1.set_xlabel("日期")
+    ax1.set_ylabel("创建数量")
+    ax1.yaxis.set_major_locator(MultipleLocator(1))
+    ax1.set_title(f'事务类型是"生产问题"时，不同项目每天创建和解决的数量 \n查询条件：{cond}"')
 
-    # 设置日期格式
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
-
-    # 显示每个节点的数据
-    for a, b in zip(daily_bug_created.index, daily_bug_created.values):
-        plt.text(a, b, str(b))
-
-    for a, b in zip(daily_bug_closed.index, daily_bug_closed.values):
-        plt.text(a, b, str(b))
-
-    # 添加网格线
-    plt.grid(True)
-
-    # 设置图表标题和坐标轴标签
-    plt.title(f"期间内缺陷创建量与解决量趋势 \n查询条件：{cond}")
-    plt.xlabel("日期")
-    plt.ylabel("数量")
-
+    ax1.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
+    # Set the x-axis ticks to match the dates in the DataFrame
+    ax1.set_xticks(range(len(created.index)))
+    ax1.set_xticklabels([date.strftime("%Y-%m-%d") for date in created.index])
     # 显示图例
-    plt.legend()
+    ax1.legend()
+    for container in ax1.containers:
+        ax1.bar_label(
+            container,
+            label_type="center",
+            labels=[f"{v}" if v != 0 else "" for v in container.datavalues],
+        )
 
+    # 设置次坐标的x轴刻度和标签
+    ax2.set_xticks(range(len(resolved.index)))
+    ax2.set_xticklabels([date.strftime("%Y-%m-%d") for date in resolved.index])
+
+    ax2.set_ylabel("解决数量")
+
+    # 隐藏次坐标轴的图例
+    ax2.get_legend().remove()
+    for container in ax2.containers:
+        ax2.bar_label(
+            container,
+            label_type="center",
+            labels=[f"{v}" if v != 0 else "" for v in container.datavalues],
+        )
+
+    # 保存图表
     plt.savefig(f"{outfile}.png", bbox_inches="tight")

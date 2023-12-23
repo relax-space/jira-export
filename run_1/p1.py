@@ -16,7 +16,8 @@ def main():
     pic_folder = "pic"
     in_file = os_path.join(root_folder, "raw", "raw.xlsx")
     # 根据项目查询
-    project_keys = ["POC11"]
+    project_keys = []
+    exclude_project_keys = ["TEST", "TEST2"]
 
     out_folder = os_path.join(root_folder, pic_folder)
     gen_dir(out_folder)
@@ -35,7 +36,10 @@ def main():
     # sprint_date = date(2023, 12, 1)
     sprint_date = None
 
-    params = (log_start, log_end, sprint_date)
+    # 根据项目类别查询
+    catelogs = []
+
+    params = (log_start, log_end, sprint_date, exclude_project_keys, catelogs)
 
     try:
         start(out_folder, in_file, file_name, project_keys, params)
