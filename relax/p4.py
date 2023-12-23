@@ -77,8 +77,6 @@ def start(
     # 使用created的索引，将resolved重新索引，并填充缺失值为0
     created = created.reindex(index=index_all, fill_value=0)
     resolved = resolved.reindex(index=index_all, fill_value=0)
-    print(created)
-    print(resolved)
 
     # 创建堆积柱状图
     fig, ax1 = plt.subplots(figsize=(12, 12))
