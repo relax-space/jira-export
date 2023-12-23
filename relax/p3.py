@@ -131,6 +131,6 @@ def start(
             va="bottom",
         )
 
-    plt.legend(loc="upper left")
+    plt.legend()
 
     plt.savefig(f"{outfile}.png", bbox_inches="tight")

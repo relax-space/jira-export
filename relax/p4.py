@@ -70,8 +70,8 @@ def start(
         return
 
     # 计算每天的BUG创建数量和关闭数量
-    daily_bug_created = df["创建日期"].dt.date.value_counts().sort_index()
-    daily_bug_closed = df["解决日期"].dt.date.value_counts().sort_index()
+    daily_bug_created = df["创建日期"].value_counts().sort_index()
+    daily_bug_closed = df["解决日期"].value_counts().sort_index()
     # 创建折线图
     plt.figure(figsize=(10, 6))
     plt.plot(

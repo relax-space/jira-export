@@ -92,6 +92,6 @@ def start(
     plt.xlabel("成员")
     plt.ylabel("饱和度")
 
-    plt.legend(loc="upper left")
+    plt.legend()
 
     plt.savefig(f"{outfile}.png", bbox_inches="tight")

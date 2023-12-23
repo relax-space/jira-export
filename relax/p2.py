@@ -68,7 +68,7 @@ def start(
     hour_number = df.groupby(["日志创建人"]).ngroups
     work_hour = round(hour_number * 8 * 0.8, 1)
     daily_time_spent_by_creator = (
-        df.groupby([df["日志创建日期"].dt.date, "日志创建人"])["日志记录工时"].sum().unstack()
+        df.groupby([df["日志创建日期"], "日志创建人"])["日志记录工时"].sum().unstack()
     )
 
     # Plotting the data
