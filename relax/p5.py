@@ -46,6 +46,9 @@ def start(
     cond, outfile = df_filter(out_folder, filename, df, params)
 
     df.drop_duplicates(subset=["编号"], keep="first", inplace=True)
+    type = "生产问题"
+    project_key = "CPXQC"
+    df.query("项目秘钥 == @project_key or 类型 == @type", inplace=True)
 
     df = df.loc[:, ["编号", "类型", "项目名称", "创建时间", "解决时间"]]
     df_log = df_log.loc[:, ["事务编号", "进行中时间"]]

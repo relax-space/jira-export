@@ -111,6 +111,8 @@ def get_changelog(
                     doing_datetime = created_datetime
                 elif fromString == "Open" and toString == "In Progress":
                     doing_datetime = created_datetime
+                elif fromString == "To Do" and toString == "In Progress":
+                    doing_datetime = created_datetime
 
             data_item = [
                 i.get("field", ""),
