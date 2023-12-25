@@ -7,46 +7,30 @@ from pandas import read_excel, to_datetime
 from datetime import date
 from os import path as os_path
 
+from relax.util_biz import df_filter
 
-def start(out_folder, in_file, filename, project_keys, params: tuple[date, date, date]):
-    log_start, log_end, sprint_date = params
+
+def start(
+    out_folder,
+    root_folder,
+    in_file,
+    filename,
+    params: tuple[date, date, date, date, date, list, list, list],
+):
+
     df = read_excel(
         in_file,
         converters={
             "迭代开始日期": to_datetime,
             "迭代结束日期": to_datetime,
+            "创建日期": to_datetime,
+            "解决日期": to_datetime,
             "日志创建日期": to_datetime,
         },
     )
     if df.empty:
         return
-    project_names = []
-    unique_project_key = set()
-    cond = ""
-    if project_keys:
-        df.query("项目秘钥 in @project_keys", inplace=True)
-        cond += f"项目[{','.join(project_keys)}]\n"
-        for key in project_keys:
-            for i, row in df.iterrows():
-                if key not in unique_project_key:
-                    if row["项目秘钥"] == key:
-                        project_names.append(row["项目名称"])
-                        unique_project_key.add(key)
-    project_name = "||".join(project_names)
-
-    outfile = os_path.join(out_folder, f"{filename}_{'_'.join(project_keys)}")
-    if sprint_date:
-        df.dropna(subset=["迭代开始日期", "迭代结束日期"], inplace=True)
-        df.query("@sprint_date >= 迭代开始日期 and @sprint_date <= 迭代结束日期", inplace=True)
-        cond += f"迭代{sprint_date}\n"
-        outfile += f'_sprint{sprint_date.strftime("%Y%m%d")}'
-
-    if log_start:
-        df.query("日志创建日期 >= @log_start and 日志创建日期 <= @log_end", inplace=True)
-        cond += f"日志期间[{log_start}~{log_end}]"
-        outfile += (
-            f'_worklog{log_start.strftime("%Y%m%d")}_{log_end.strftime("%Y%m%d")}'
-        )
+    cond, outfile = df_filter(out_folder, filename, df, params)
 
     df.drop_duplicates(subset=["编号"], keep="first", inplace=True)
 

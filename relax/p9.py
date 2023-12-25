@@ -7,62 +7,36 @@ from pandas import read_excel, to_datetime
 from datetime import date
 from os import path as os_path
 
+from relax.util_biz import df_filter
+
 
 def start(
     out_folder,
+    root_folder,
     in_file,
     filename,
-    project_keys,
-    params: tuple[date, date, date, list, list],
+    params: tuple[date, date, date, date, date, list, list, list],
 ):
-    log_start, log_end, sprint_date, exclude_project_keys, catelogs = params
+
     df = read_excel(
         in_file,
         converters={
             "迭代开始日期": to_datetime,
             "迭代结束日期": to_datetime,
+            "创建日期": to_datetime,
+            "解决日期": to_datetime,
             "日志创建日期": to_datetime,
         },
     )
     if df.empty:
         return
-    unique_project_key = set()
-    cond = ""
-    if project_keys:
-        df.query("项目秘钥 in @project_keys", inplace=True)
-        cond += f"项目[{','.join(project_keys)}]\n"
-        for key in project_keys:
-            for i, row in df.iterrows():
-                if key not in unique_project_key:
-                    if row["项目秘钥"] == key:
-                        unique_project_key.add(key)
+    cond, outfile = df_filter(out_folder, filename, df, params)
 
-    if exclude_project_keys:
-        df.query("项目秘钥 not in @exclude_project_keys", inplace=True)
-
-    outfile = os_path.join(out_folder, f"{filename}_{'_'.join(project_keys)}")
-    if log_start:
-        df.query("日志创建日期 >= @log_start and 日志创建日期 <= @log_end", inplace=True)
-        cond += f"日志期间[{log_start}~{log_end}]\n"
-        outfile += (
-            f'_worklog{log_start.strftime("%Y%m%d")}_{log_end.strftime("%Y%m%d")}'
-        )
-
-    if sprint_date:
-        df.dropna(subset=["迭代开始日期", "迭代结束日期"], inplace=True)
-        df.query("@sprint_date >= 迭代开始日期 and @sprint_date <= 迭代结束日期", inplace=True)
-        cond += f"迭代{sprint_date}\n"
-        outfile += f'_sprint{sprint_date.strftime("%Y%m%d")}'
-    if catelogs:
-        df.query("项目类别 in @catelogs", inplace=True)
-        cond += f"项目类别{','.join(catelogs)}\n"
-        outfile += f"_项目类别{'_'.join(catelogs)}"
+    df.drop_duplicates(subset=["编号"], keep="first", inplace=True)
 
     if df.empty:
         print(f"{filename} 查询条件没有数据。")
         return
-
-    df.drop_duplicates(subset=["编号"], keep="first", inplace=True)
 
     group = df.groupby(["类型", "状态"]).size().unstack(fill_value=0)
 

@@ -8,58 +8,36 @@ from datetime import date
 from os import path as os_path
 import matplotlib.ticker as mtick
 
+from relax.util_biz import df_filter
+
 
 def start(
     out_folder,
+    root_folder,
     in_file,
     filename,
-    project_keys,
-    params: tuple[date, date, date, list, list],
+    params: tuple[date, date, date, date, date, list, list, list],
 ):
-    log_start, log_end, sprint_date, exclude_project_keys, catelogs = params
+
     df = read_excel(
         in_file,
         converters={
             "迭代开始日期": to_datetime,
             "迭代结束日期": to_datetime,
+            "创建日期": to_datetime,
+            "解决日期": to_datetime,
             "日志创建日期": to_datetime,
         },
     )
     if df.empty:
         return
-    unique_project_key = set()
-    cond = ""
-    if project_keys:
-        df.query("项目秘钥 in @project_keys", inplace=True)
-        cond += f"项目[{','.join(project_keys)}]\n"
-        for key in project_keys:
-            for i, row in df.iterrows():
-                if key not in unique_project_key:
-                    if row["项目秘钥"] == key:
-                        unique_project_key.add(key)
+    cond, outfile = df_filter(out_folder, filename, df, params)
 
-    if exclude_project_keys:
-        df.query("项目秘钥 not in @exclude_project_keys", inplace=True)
-
-    outfile = os_path.join(out_folder, f"{filename}_{'_'.join(project_keys)}")
-    if log_start:
-        df.query("日志创建日期 >= @log_start and 日志创建日期 <= @log_end", inplace=True)
-        cond += f"日志期间[{log_start}~{log_end}]\n"
-        outfile += (
-            f'_worklog{log_start.strftime("%Y%m%d")}_{log_end.strftime("%Y%m%d")}'
-        )
+    if df.empty:
+        print(f"{filename} 查询条件没有数据。")
+        return
 
     df.drop_duplicates(subset=["编号"], keep="first", inplace=True)
-
-    if sprint_date:
-        df.dropna(subset=["迭代开始日期", "迭代结束日期"], inplace=True)
-        df.query("@sprint_date >= 迭代开始日期 and @sprint_date <= 迭代结束日期", inplace=True)
-        cond += f"迭代{sprint_date}\n"
-        outfile += f'_sprint{sprint_date.strftime("%Y%m%d")}'
-    if catelogs:
-        df.query("项目类别 in @catelogs", inplace=True)
-        cond += f"项目类别{','.join(catelogs)}\n"
-        outfile += f"_项目类别{'_'.join(catelogs)}"
 
     status = "完成"
     df.query("解决方案 == @status", inplace=True)
@@ -70,9 +48,6 @@ def start(
 
     # 按 '项目' 分组，并计算预估工时和实际工时的总和
     grouped = df.groupby("项目名称")[["预估工时", "实际工时"]].sum()
-
-    # # 创建柱状图
-    # grouped.plot(kind="bar", figsize=(12, 8))
 
     # 去除所有预估工时为0的数据
     grouped = grouped[grouped["预估工时"] != 0]
@@ -90,6 +65,16 @@ def start(
     ax1.set_ylabel("工时(小时)")
     # ax1.set_ylim(bottom=-15, top=15)  # 设置y轴范围
     plt.title(f"项目预估工时与实际工时对比，并且计算预估偏差率 \n查询条件：{cond}")
+
+    for i in ax1.patches:
+        # get_x pulls left or right; get_height pushes up or down
+        ax1.text(
+            i.get_x() + i.get_width() / 2,
+            i.get_height() + 0.5,
+            str(round(i.get_height(), 2)),
+            ha="center",
+            va="bottom",
+        )
 
     # 创建第二个y轴
     ax2 = ax1.twinx()
@@ -110,16 +95,6 @@ def start(
     fmt = "{x:,.0%}"
     tick = mtick.StrMethodFormatter(fmt)
     ax2.yaxis.set_major_formatter(tick)  # 格式化y轴标签为百分比形式
-
-    for i in ax1.patches:
-        # get_x pulls left or right; get_height pushes up or down
-        ax1.text(
-            i.get_x() + i.get_width() / 2,
-            i.get_height() + 0.5,
-            str(round(i.get_height(), 2)),
-            ha="center",
-            va="bottom",
-        )
 
     for i in range(len(grouped["预估偏差率"])):
         v = grouped["预估偏差率"][i]

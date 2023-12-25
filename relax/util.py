@@ -46,3 +46,16 @@ def get_workday_count(start: date, end: date) -> int:
             continue
         count += 1
     return count
+
+
+import importlib
+
+
+def import_package(package_name):
+    try:
+        module = importlib.import_module(package_name)
+        # 在这里可以使用导入的模块进行后续操作
+        print(f"成功导入包：{package_name}")
+        return module
+    except ImportError:
+        print(f"无法导入包：{package_name}")
