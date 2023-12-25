@@ -106,8 +106,12 @@ def get_changelog(
             to_1 = i.get("to", "")
             toString = i.get("toString", "")
             doing_datetime = None
-            if fieldId == "status" and fromString == "打开" and toString == "进行中":
-                doing_datetime = created_datetime
+            if fieldId == "status":
+                if fromString == "打开" and toString == "进行中":
+                    doing_datetime = created_datetime
+                elif fromString == "Open" and toString == "In Progress":
+                    doing_datetime = created_datetime
+
             data_item = [
                 i.get("field", ""),
                 i.get("fieldtype", ""),
