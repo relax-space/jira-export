@@ -62,6 +62,8 @@ def start(
         print(f"{filename} 查询条件没有数据。")
         return
 
+    df.drop_duplicates(subset=["编号"], keep="first", inplace=True)
+
     group = df.groupby(["类型", "状态"]).size().unstack(fill_value=0)
 
     # Plotting the data

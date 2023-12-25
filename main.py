@@ -46,19 +46,23 @@ def start(server, cookie, project_key, folder_name):
 
     if project_key:
         projects = [i for i in projects if i.key == project_key]
-    pass
 
     with ThreadPoolExecutor() as executor:
         futures = {executor.submit(download, project, jira) for project in projects}
         df_list = []
+        df_changelog_list = []
         for f in futures:
-            df = f.result()
-            df_list.append(df)
+            df_tuple = f.result()
+            df_list.append(df_tuple[0])
+            df_changelog_list.append(df_tuple[1])
         df = concat(df_list)
         name = f"{folder_name}/raw.xlsx"
         with ExcelWriter(name) as writer:
             df.to_excel(writer, sheet_name="sheet1", index=False)
-
+        df2 = concat(df_changelog_list)
+        name2 = f"{folder_name}/raw_log.xlsx"
+        with ExcelWriter(name2) as writer:
+            df2.to_excel(writer, sheet_name="sheet1", index=False)
     print("All issues downloaded successfully!")
 
 
@@ -76,11 +80,73 @@ def download(project, jira: JIRA):
         # print(format_exc())
 
 
+def get_changelog(
+    datas: list, issue_id: str, project_key2: str, projectCategory: str, changelog: dict
+):
+    histories = changelog.get("histories", [])
+    histories: list[dict] = remove_blank(histories, "[]", [])
+    for his in histories:
+        data_top = []
+        created = his.get("created", "")
+        created_datetime = f_date(created)
+        data_top.append(issue_id)
+        data_top.append(project_key2)
+        data_top.append(projectCategory)
+        data_top.append(his.get("id", "0"))
+        data_top.append(created_datetime)
+        data_top.append(f_date(created, "%Y-%m-%d"))
+        data_top.append(his.get("author", {}).get("displayName", ""))
+        items = his.get("items", [])
+        items: list[dict] = remove_blank(items, "[]", [])
+        for i in items:
+            data = deepcopy(data_top)
+            fieldId = i.get("fieldId", "")
+            from_1 = i.get("from", "")
+            fromString = i.get("fromString", "")
+            to_1 = i.get("to", "")
+            toString = i.get("toString", "")
+            doing_datetime = None
+            if fieldId == "status" and fromString == "打开" and toString == "进行中":
+                doing_datetime = created_datetime
+            data_item = [
+                i.get("field", ""),
+                i.get("fieldtype", ""),
+                fieldId,
+                from_1,
+                fromString,
+                to_1,
+                toString,
+                doing_datetime,
+            ]
+            data.extend(data_item)
+            datas.append(data)
+        if not items:
+            data = deepcopy(data_top)
+            data_item = [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+            ]
+            data.extend(data_item)
+            datas.append(data)
+
+    pass
+
+
 # Download issues for each project
 def download_issues(project, jira: JIRA):
     maxResults = 100
     project_key = project.key
-    issues = jira.search_issues(f"project={project_key}", maxResults=maxResults)
+    issues = jira.search_issues(
+        f"project={project_key}",
+        maxResults=maxResults,
+        expand="changelog",
+    )
     if issues.total > maxResults:
         for start in range(maxResults, issues.total, maxResults):
             issues += jira.search_issues(
@@ -129,9 +195,28 @@ def download_issues(project, jira: JIRA):
         "日志更新时间",
         "日志更新日期",
     ]
+    changelog_headers = [
+        "事务编号",
+        "项目秘钥",
+        "项目类别",
+        "编号",
+        "时间",
+        "日期",
+        "创建人",
+        "field",
+        "fieldtype",
+        "fieldId",
+        "from",
+        "fromString",
+        "to",
+        "toString",
+        "进行中时间",
+    ]
     data = []
+    changelog_datas = []
     for issue in issues:
         id = issue.raw.get("id", "")
+
         key = issue.raw.get("key", "")
         issue_fields: dict = issue.raw["fields"]
         parent = issue_fields.get("parent", {})
@@ -176,6 +261,14 @@ def download_issues(project, jira: JIRA):
 
         resolutiondate = issue_fields.get("resolutiondate", "")
         created = issue_fields.get("created", "")
+
+        project_key2 = project.get("key")
+        projectCategory = project.get("projectCategory", {}).get("name", "")
+
+        changelog = issue.raw.get("changelog", {})
+        changelog = remove_blank(changelog, "{}", {})
+        get_changelog(changelog_datas, id, project_key2, projectCategory, changelog)
+
         row = [
             f_date(issue_fields.get("statuscategorychangedate", "")),
             parent.get("id", ""),
@@ -195,8 +288,8 @@ def download_issues(project, jira: JIRA):
             assignee.get("displayName", ""),
             assignee.get("active", ""),
             project.get("name"),
-            project.get("key"),
-            project.get("projectCategory", {}).get("name", ""),
+            project_key2,
+            projectCategory,
             f_date(resolutiondate),
             f_date(resolutiondate, "%Y-%m-%d"),
             f_date(created),
@@ -275,7 +368,8 @@ def download_issues(project, jira: JIRA):
             data.append(row)
 
     df1 = DataFrame(data, columns=headers)
-    return df1
+    df2 = DataFrame(changelog_datas, columns=changelog_headers)
+    return (df1, df2)
 
 
 if __name__ == "__main__":
