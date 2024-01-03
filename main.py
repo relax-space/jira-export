@@ -4,7 +4,7 @@ from traceback import format_exc
 from pandas import ExcelWriter, DataFrame, concat
 
 from relax.util import f_date, gen_dir, to_hour
-from os import path as os_path
+from os import path as os_path, getenv as os_getenv
 from copy import deepcopy
 from json import dump
 import urllib3
@@ -380,13 +380,13 @@ def download_issues(project, jira: JIRA):
 
 if __name__ == "__main__":
     server = "https://reddate123.atlassian.net"
-    cookie = ""
+    cookie = os_getenv("jira1_cookie")
     raw_folder = os_path.join("data1", "raw")
     gen_dir(raw_folder)
     start(server, cookie, "", raw_folder)
 
     # server = "https://udpn.atlassian.net"
-    # cookie = ""
+    # cookie  = os_getenv("jira2_cookie")
     # raw_folder = os_path.join("data2", "raw")
     # gen_dir(raw_folder)
     # start(server, cookie, "UDPN", raw_folder)
