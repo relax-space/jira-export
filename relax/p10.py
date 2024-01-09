@@ -5,9 +5,6 @@
 from matplotlib import pyplot as plt
 from pandas import read_excel, to_datetime
 from datetime import date
-from os import path as os_path
-import matplotlib.dates as mdates
-
 from relax.util_biz import df_filter
 
 
@@ -36,14 +33,18 @@ def start(
         print(f"{filename} 查询条件没有数据。")
         return
 
-    group = df.groupby(["项目名称", "日志记录工时"]).size().unstack(fill_value=0)
+    group = df.groupby(["项目名称"])[["日志记录工时"]].sum()
+
+    def calc(pct):
+        work_hours = round(pct / 100.0 * sum(group.sum(axis=1)), 1)
+        return f"{pct:.2f}%\n{work_hours}h"
 
     # Plotting the data
     fig, ax = plt.subplots()
     wedges, texts, autotexts = ax.pie(
         group.sum(axis=1),
         labels=group.index,
-        autopct=lambda pct: f"{pct:.1f}%\n({int(pct/100*sum(group.sum(axis=1)))}h)",
+        autopct=lambda pct: calc(pct),
         startangle=140,
     )
 
@@ -53,6 +54,7 @@ def start(
             label_type="center",
             labels=[f"{v}" if v != 0 else "" for v in container.datavalues],
         )
+
     plt.title(f"期间内所有项目的工时分布占比 \n查询条件：{cond}")
     # 显示图表
     plt.savefig(f"{outfile}.png", bbox_inches="tight")

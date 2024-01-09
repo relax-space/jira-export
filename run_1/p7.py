@@ -18,8 +18,8 @@ def main():
     params = {
         "create_start": None,
         "create_end": None,
-        "log_start": date(2023, 12, 18),
-        "log_end": date.today(),
+        "log_start": date(2024, 1, 2),
+        "log_end": date(2024, 1, 7),
         "sprint_date": None,
         "project_keys": [],
         "exclude_project_keys": ["TEST", "TEST2"],
