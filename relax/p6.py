@@ -18,7 +18,6 @@ def start(
     filename,
     params: tuple[date, date, date, date, date, list, list, list],
 ):
-
     df = read_excel(
         in_file,
         converters={
@@ -55,8 +54,8 @@ def start(
         color="g",
         linestyle="-",
         label="Average Work Hours",
-        xmin=x_start / len(group),
-        xmax=x_end / len(group),
+        xmin=round(x_start / len(group), 1),
+        xmax=round(x_end / len(group), 1),
     )
     plt.text(
         x_end,
@@ -72,7 +71,7 @@ def start(
         plt.bar_label(
             container,
             label_type="center",
-            labels=[f"{v}" if v != 0 else "" for v in container.datavalues],
+            labels=[f"{round(v,1)}" if v != 0 else "" for v in container.datavalues],
         )
     # [{date1.strftime('%Y-%m-%d')}~{date2.strftime('%Y-%m-%d')}]
     plt.title(f"成员工时每日分布 \n查询条件：{cond}")
