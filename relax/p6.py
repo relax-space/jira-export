@@ -66,7 +66,7 @@ def start(
         backgroundcolor="w",
     )
 
-    plt.legend()
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     for container in plt.gca().containers:
         plt.bar_label(
             container,
