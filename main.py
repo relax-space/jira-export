@@ -1,8 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from jira import JIRA
 from traceback import format_exc
-from pandas import ExcelWriter, DataFrame, concat
-
+from pandas import ExcelWriter, DataFrame, concat, read_excel
 from relax.util import f_date, gen_dir, to_hour
 from os import path as os_path, getenv as os_getenv
 from copy import deepcopy
@@ -63,7 +62,7 @@ def start(server, cookie, project_key, folder_name):
         name2 = f"{folder_name}/raw_log.xlsx"
         with ExcelWriter(name2) as writer:
             df2.to_excel(writer, sheet_name="sheet1", index=False)
-    print("All issues downloaded successfully!")
+    print("downloaded successfully!")
 
 
 def remove_blank(raw, blank_mark, replace_value):
@@ -378,6 +377,30 @@ def download_issues(project, jira: JIRA):
     return (df1, df2)
 
 
+def merge_to_data1(folder_1="data1", folder_2="data2"):
+    raw_folder_1 = os_path.join(folder_1, "raw")
+    raw_folder_2 = os_path.join(folder_2, "raw")
+    df_1 = read_excel(os_path.join(raw_folder_1, "raw.xlsx"))
+    df_2 = read_excel(os_path.join(raw_folder_2, "raw.xlsx"))
+    df = concat([df_1, df_2])
+    name = f"{raw_folder_1}/raw.xlsx"
+    with ExcelWriter(name) as writer:
+        df.to_excel(writer, sheet_name="sheet1", index=False)
+    pass
+
+
+def merge_log_to_data1(folder_1="data1", folder_2="data2"):
+    raw_folder_1 = os_path.join(folder_1, "raw")
+    raw_folder_2 = os_path.join(folder_2, "raw")
+    df_1 = read_excel(os_path.join(raw_folder_1, "raw_log.xlsx"))
+    df_2 = read_excel(os_path.join(raw_folder_2, "raw_log.xlsx"))
+    df = concat([df_1, df_2])
+    name = f"{raw_folder_1}/raw_log.xlsx"
+    with ExcelWriter(name) as writer:
+        df.to_excel(writer, sheet_name="sheet1", index=False)
+    pass
+
+
 if __name__ == "__main__":
     server = "https://reddate123.atlassian.net"
     cookie = os_getenv("jira1_cookie")
@@ -385,9 +408,19 @@ if __name__ == "__main__":
     gen_dir(raw_folder)
     start(server, cookie, "", raw_folder)
 
-    # server = "https://udpn.atlassian.net"
-    # cookie  = os_getenv("jira2_cookie")
-    # raw_folder = os_path.join("data2", "raw")
-    # gen_dir(raw_folder)
-    # start(server, cookie, "UDPN", raw_folder)
+    print("1. reddate123 complete!!")
+
+    server = "https://udpn.atlassian.net"
+    cookie = os_getenv("jira2_cookie")
+    raw_folder = os_path.join("data2", "raw")
+    gen_dir(raw_folder)
+    start(server, cookie, "UDPN", raw_folder)
+
+    print("2. udpn complete!!")
+
+    merge_to_data1()
+    merge_log_to_data1()
+
+    print("3. all complete!!")
+
     pass
