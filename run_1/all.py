@@ -1,18 +1,23 @@
 from concurrent.futures import ProcessPoolExecutor
+from datetime import date
 
 
 def main():
+    args = {
+        "log_start": date(2024, 1, 2),
+        "log_end": date(2024, 1, 7),
+    }
     with ProcessPoolExecutor() as executor:
-        executor.submit(main1)
-        executor.submit(main2)
-        executor.submit(main3)
-        executor.submit(main4)
-        executor.submit(main5)
-        executor.submit(main6)
-        executor.submit(main7)
-        executor.submit(main8)
-        executor.submit(main9)
-        executor.submit(main10)
+        executor.submit(main1, args)
+        executor.submit(main2, args)
+        executor.submit(main3, args)
+        executor.submit(main4, args)
+        executor.submit(main5, args)
+        executor.submit(main6, args)
+        executor.submit(main7, args)
+        executor.submit(main8, args)
+        executor.submit(main9, args)
+        executor.submit(main10, args)
 
 
 if __name__ == "__main__":

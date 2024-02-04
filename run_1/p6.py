@@ -3,7 +3,7 @@ from os import path as os_path, chdir
 from sys import path as sys_path
 
 
-def main():
+def main(args: dict):
     p = os_path.dirname(os_path.dirname(os_path.abspath(__file__)))
     sys_path.insert(0, p)
     chdir(p)
@@ -18,13 +18,15 @@ def main():
     params = {
         "create_start": None,
         "create_end": None,
-        "log_start": date(2023, 12, 18),
+        "log_start": date(2024, 1, 14),
         "log_end": date.today(),
         "sprint_date": None,
         "project_keys": [],
         "exclude_project_keys": ["TEST", "TEST2"],
         "catelogs": [],
     }
+    if args:
+        params.update(args)
     params = params.values()
     start_common(
         package_name,

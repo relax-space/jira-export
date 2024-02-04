@@ -2,7 +2,7 @@ from datetime import date
 from os import path as os_path, chdir
 from sys import path as sys_path
 
-def main():
+def main(args: dict):
     p = os_path.dirname(os_path.dirname(os_path.abspath(__file__)))
     sys_path.insert(0, p)
     chdir(p)
@@ -24,6 +24,8 @@ def main():
         "exclude_project_keys": ["TEST", "TEST2"],
         "catelogs": [],
     }
+    if args:
+        params.update(args)
     params = params.values()
     start_common(
         package_name,
